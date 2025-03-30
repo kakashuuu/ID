@@ -1,0 +1,16 @@
+{
+  "name": "shoob-card-scraper",
+  "version": "1.0.0",
+  "description": "A Puppeteer-based scraper for Shoob.gg cards, storing IDs categorized by tiers.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "puppeteer-extra": "^3.3.4",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "fs-extra": "^11.1.1"
+  },
+  "author": "Your Name",
+  "license": "MIT"
+}
