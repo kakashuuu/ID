@@ -31,7 +31,7 @@ async function fetchCardDetails(cardId) {
         console.log(`Fetching card details: ${url}`);
 
         await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
-        await page.waitForTimeout(5000);
+        await new Promise(resolve => setTimeout(resolve, 5000));
         await page.waitForSelector(".card-info", { timeout: 30000 });
 
         const cardDetails = await page.evaluate(() => {
