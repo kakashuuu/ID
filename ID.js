@@ -7,7 +7,7 @@ puppeteer.use(StealthPlugin());
 const TOTAL_PAGES = 2090;
 const URL_TEMPLATE = "https://shoob.gg/cards?page=";
 const LAST_PAGE_FILE = "last_page.txt";
-const DATA_FILE = "cards_by_tier.json";
+const DATA_FILE = "cards_tier_data.json";
 
 let browser;
 
@@ -31,14 +31,15 @@ async function fetchCardDetails(cardId) {
         console.log(`Fetching card details: ${url}`);
 
         await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        await page.waitForSelector(".card-info", { timeout: 30000 });
+
+        await page.waitForSelector(".card-info", { timeout: 60000 });
 
         const cardDetails = await page.evaluate(() => {
             const name = document.querySelector(".card-name")?.textContent.trim();
-            const tierText = document.querySelector(".card-tier")?.textContent.trim();
-            const tier = tierText === "S" ? "S" : `Tier ${tierText}`;
-            return { id: window.location.pathname.split("/").pop(), name, tier };
+            const tier = document.querySelector(".card-tier")?.textContent.trim();
+            const imageUrl = document.querySelector(".card-image img")?.src;
+            const description = document.querySelector(".card-description")?.textContent.trim();
+            return { name, tier, imageUrl, description };
         });
 
         return cardDetails;
@@ -53,6 +54,7 @@ async function fetchCardDetails(cardId) {
 async function fetchAndStoreCardIds(pageNumber) {
     const page = await browser.newPage();
     await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36");
+    
     try {
         const url = `${URL_TEMPLATE}${pageNumber}`;
         console.log(`Fetching page: ${url}`);
@@ -83,15 +85,16 @@ async function fetchAndStoreCardIds(pageNumber) {
 
 function saveToJSON(cardDetails) {
     const data = readDataFile();
-    const { tier, id } = cardDetails;
+    
+    const tier = cardDetails.tier || "Unknown";
 
     if (!data[tier]) {
         data[tier] = [];
     }
-    data[tier].push(id);
 
+    data[tier].push(cardDetails);
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-    console.log(`Saved card ${id} under ${tier}`);
+    console.log(`Saved new card in ${tier}. Total cards in ${tier}: ${data[tier].length}`);
 }
 
 function readDataFile() {
