@@ -7,7 +7,7 @@ puppeteer.use(StealthPlugin());
 const TOTAL_PAGES = 2090;
 const URL_TEMPLATE = "https://shoob.gg/cards?page=";
 const LAST_PAGE_FILE = "last_page.txt";
-const DATA_FILE = "cards_details.json";
+const DATA_FILE = "cards_by_tier.json";
 
 let browser;
 
@@ -36,10 +36,9 @@ async function fetchCardDetails(cardId) {
 
         const cardDetails = await page.evaluate(() => {
             const name = document.querySelector(".card-name")?.textContent.trim();
-            const tier = document.querySelector(".card-tier")?.textContent.trim();
-            const imageUrl = document.querySelector(".card-image img")?.src;
-            const description = document.querySelector(".card-description")?.textContent.trim();
-            return { name, tier, imageUrl, description };
+            const tierText = document.querySelector(".card-tier")?.textContent.trim();
+            const tier = tierText === "S" ? "S" : `Tier ${tierText}`;
+            return { id: window.location.pathname.split("/").pop(), name, tier };
         });
 
         return cardDetails;
@@ -84,17 +83,23 @@ async function fetchAndStoreCardIds(pageNumber) {
 
 function saveToJSON(cardDetails) {
     const data = readDataFile();
-    data.push(cardDetails);
+    const { tier, id } = cardDetails;
+
+    if (!data[tier]) {
+        data[tier] = [];
+    }
+    data[tier].push(id);
+
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-    console.log(`Saved new card details. Total cards: ${data.length}`);
+    console.log(`Saved card ${id} under ${tier}`);
 }
 
 function readDataFile() {
     if (fs.existsSync(DATA_FILE)) {
         const existingData = fs.readFileSync(DATA_FILE, "utf-8");
-        return existingData ? JSON.parse(existingData) : [];
+        return existingData ? JSON.parse(existingData) : {};
     }
-    return [];
+    return {};
 }
 
 function saveLastPage(pageNumber) {
